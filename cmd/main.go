@@ -6,6 +6,8 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/utils/pointer"
 )
 
@@ -111,5 +113,28 @@ func main() {
 		fmt.Printf("Created deployment %q.\n", result.GetObjectMeta().GetName())
 	}
 
+	patchTemplate := map[string]interface{}{
+		"metadata": map[string]interface{}{
+			"labels": map[string]interface{}{
+				"creator": "sukai",
+			},
+		},
+	}
+	patchdata, _ := json.Marshal(patchTemplate)
+	result, err = kubeclient.PatchDeployment("sukai2021", "sukai", types.StrategicMergePatchType, patchdata)
+	if err != nil {
+		fmt.Printf("failed to patch deployment, error: %+v\n",err)
+	} else {
+		fmt.Printf("patched deployment: %+v\n", result.Name)
+	}
+
+	scale, err := kubeclient.GetScaleDeployment("sukai2021", "sukai")
+	scale.Spec.Replicas = 3
+	_, err = kubeclient.ScalaDeployment("sukai2021", "sukai", scale)
+	if err != nil {
+		fmt.Printf("failed to scale deployment, error: %+v\n",err)
+	} else {
+		fmt.Printf("scaled deployment")
+	}
 }
 
